@@ -72,13 +72,13 @@ typedef struct{
     Color color;
 }SH1106;
 
-void oled_write(uint8_t data){
+void oled_write_register(uint8_t data){
     uint8_t src[2] = {CMD_REGISTER, data};
 
     i2c_write_blocking(I2C_MACRO, SH1106_I2C_ADDR, src, 2, false);
 }
 
-void oled_write_multi(uint8_t* data, uint16_t count){
+void oled_write_register_multi(uint8_t* data, uint16_t count){
     uint8_t src[OLED_W + 1];
     src[0] = DATA_REGISTER;
     for (uint16_t i = 0; i < count; i++){
@@ -89,28 +89,28 @@ void oled_write_multi(uint8_t* data, uint16_t count){
 
 void oled_update_screen(SH1106* oled){
     for (uint8_t m = 0; m < 8; m++){
-        oled_write(PAGE_ADDR + m);
-        oled_write(LOWER_COL_ADDR);
-        oled_write(HIGHER_COL_ADDR);
+        oled_write_register(PAGE_ADDR + m);
+        oled_write_register(LOWER_COL_ADDR);
+        oled_write_register(HIGHER_COL_ADDR);
 
-        oled_write_multi(&oled->buffer[OLED_W*m], OLED_W);
+        oled_write_register_multi(&oled->buffer[OLED_W*m], OLED_W);
     }
 }
 /* Reversing black pixel to colored one and colored one to black and vise verse */
 void oled_negative_screen(SH1106* oled){
     oled->negative = !oled->negative;
     if (oled->negative)
-        oled_write(SET_NORMAL_DISPLAY);
+        oled_write_register(SET_NORMAL_DISPLAY);
     else
-        oled_write(SET_REVERSE_DISPLAY);
+        oled_write_register(SET_REVERSE_DISPLAY);
 }
 /*Inverts screen vertically. Only vertically */
 void oled_invert_screen(SH1106* oled){
     oled->inverted = !oled->inverted;
     if (oled->inverted)
-        oled_write(0xC0);
+        oled_write_register(0xC0);
     else
-        oled_write(0xC8);
+        oled_write_register(0xC8);
 }
 
 void oled_fill(Color color, SH1106* oled){
@@ -190,56 +190,56 @@ void oled_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, SH1106* oled
 }
 
 SH1106 oled_init(){
-    oled_write(DISPLAY_OFF);
+    oled_write_register(DISPLAY_OFF);
 
-    //oled_write(SET_VCOM_DESELECT_MODE);
-    oled_write(VCOM_DESELECT_VALUE);
-    oled_write(0x10);
+    //oled_write_register(SET_VCOM_DESELECT_MODE);
+    oled_write_register(VCOM_DESELECT_VALUE);
+    oled_write_register(0x10);
 
-    oled_write(PAGE_ADDR);
+    oled_write_register(PAGE_ADDR);
 
-    oled_write(COM_DIRECTION);
+    oled_write_register(COM_DIRECTION);
 
-    oled_write(LOWER_COL_ADDR);
-    oled_write(HIGHER_COL_ADDR);
+    oled_write_register(LOWER_COL_ADDR);
+    oled_write_register(HIGHER_COL_ADDR);
 
-    oled_write(START_LINE);
+    oled_write_register(START_LINE);
 
-    oled_write(SET_CONTRAST_CONTROL_MODE);
-    oled_write(CONTRAST_VAL);
+    oled_write_register(SET_CONTRAST_CONTROL_MODE);
+    oled_write_register(CONTRAST_VAL);
 
-    oled_write(SEGMENT_REMAP);
+    oled_write_register(SEGMENT_REMAP);
 
-    oled_write(SET_NORMAL_DISPLAY);
+    oled_write_register(SET_NORMAL_DISPLAY);
 
-    oled_write(SET_MULTIPLEX_RATION_MODE);
-    oled_write(MULTIPLEX_RATION_VAL);
+    oled_write_register(SET_MULTIPLEX_RATION_MODE);
+    oled_write_register(MULTIPLEX_RATION_VAL);
 
-    oled_write(ENTIRE_DISPLAY_ON);
+    oled_write_register(ENTIRE_DISPLAY_ON);
 
-    oled_write(SET_DISPLAY_OFFSET);
-    oled_write(DISPLAY_OFFSET_VAL);
+    oled_write_register(SET_DISPLAY_OFFSET);
+    oled_write_register(DISPLAY_OFFSET_VAL);
 
-    oled_write(SET_FREQUENCY_MODE);
-    oled_write(FREQUENCY_VALUE);
+    oled_write_register(SET_FREQUENCY_MODE);
+    oled_write_register(FREQUENCY_VALUE);
 
-    oled_write(SET_PRECHARGE_PERIOD_MODE);
-    oled_write(PRECHARGE_PERIOD_VAL);
+    oled_write_register(SET_PRECHARGE_PERIOD_MODE);
+    oled_write_register(PRECHARGE_PERIOD_VAL);
 
-    oled_write(SET_COM_HARDW_CONF_MODE);
-    oled_write(COM_HARD_CONF_MODE);
+    oled_write_register(SET_COM_HARDW_CONF_MODE);
+    oled_write_register(COM_HARD_CONF_MODE);
 
-    oled_write(SET_VCOM_DESELECT_MODE);
-    oled_write(VCOM_DESELECT_VALUE);
+    oled_write_register(SET_VCOM_DESELECT_MODE);
+    oled_write_register(VCOM_DESELECT_VALUE);
 
-    /*oled_write(SET_DC_CONTROL_MODE);
-        oled_write(DC_DC_ON);*/
-    oled_write(SET_DC_CONTROL_MODE);
-    oled_write(DC_DC_VAL);
+    /*oled_write_register(SET_DC_CONTROL_MODE);
+        oled_write_register(DC_DC_ON);*/
+    oled_write_register(SET_DC_CONTROL_MODE);
+    oled_write_register(DC_DC_VAL);
 
-    oled_write(SCROLL_OFF);
+    oled_write_register(SCROLL_OFF);
 
-    oled_write(DISPLAY_ON);
+    oled_write_register(DISPLAY_ON);
 
     SH1106 oled;
 
