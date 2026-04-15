@@ -2,29 +2,72 @@
 #include "pico/cyw43_arch.h"
 #include "hardware/i2c.h"
 
+/*#include "pico-sh1106-oled/sh1106.h"
+#include "pico-sh1106-oled/sh1106.c"
+#include "pico-sh1106-oled/font.c"
+#include "pico-sh1106-oled/font.h"*/
+
 #include "sh1006.h"
 #include "fonts.h"
+#include <pico/time.h>
 
 
 int main() {
     stdio_init_all();
 
+    sleep_ms(100);
     i2c_init(i2c_default, 400000);
     gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
     gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
     gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
 
+    sleep_ms(100); // I generally reccomend putting delay, otherwise it might cause strange behaviour
+
     SH1106 oled = oled_init();
 
-    oled_draw_pixel(10, 10, &oled);
+    const uint8_t lain[] = {
+          0x00, 0x01, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00,
+          0x00, 0xc7, 0xc6, 0x00,
+          0x01, 0x9f, 0xf3, 0x00,
+          0x03, 0x38, 0x39, 0x80,
+          0x06, 0x70, 0x1c, 0xc0,
+          0x04, 0xe3, 0x8e, 0x40,
+          0x0c, 0xcc, 0x66, 0x60,
+          0x09, 0x88, 0x23, 0x20,
+          0x19, 0x91, 0x13, 0x30,
+          0x31, 0x93, 0x93, 0x18,
+          0x31, 0x91, 0x13, 0x18,
+          0x11, 0x88, 0x23, 0x10,
+          0x18, 0xcc, 0x66, 0x30,
+          0x08, 0xe3, 0x8e, 0x20,
+          0x0c, 0x70, 0x1c, 0x60,
+          0x06, 0x3c, 0x78, 0xc0,
+          0x03, 0x1c, 0x71, 0x80,
+          0x11, 0x06, 0xc1, 0x10,
+          0x00, 0x06, 0xc0, 0x00,
+          0x00, 0x06, 0xc0, 0x00,
+          0x00, 0x06, 0xc0, 0x00,
+          0x00, 0xc6, 0xc6, 0x00,
+          0x00, 0xfc, 0xfe, 0x00,
+          0x00, 0x78, 0x7c, 0x00,
+          0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00
+    };
 
-    oled_print_str("\"Helloworld\"(print)", 0, 5, font5x7, &oled);
+    oled_draw_bitmap(80, 0, 32, 28, lain, &oled);
 
-    oled_draw_line(80, 10, 88, 30, &oled);
+    oled_print_str("Rpi Pico 2W", 0, 0, font5x7, &oled);
+    oled_print_str("example:", 0, 10, font5x7, &oled);
 
+    oled_draw_rect(0, 20, 10, 10, &oled);
+
+    oled_draw_line(80, 50, 60, 40, &oled);
     oled_update_screen(&oled);
     while (true) {
+
         sleep_ms(1000);
     }
 }
