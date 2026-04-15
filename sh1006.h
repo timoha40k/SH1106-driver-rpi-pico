@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #define SH1106_I2C_ADDR 0x3C
 #define OLED_W 128
@@ -67,7 +68,7 @@
 typedef enum {BLACK, WHITE} Color;
 
 typedef struct{
-    uint8_t buffer[OLED_W * OLED_H / 8];
+    uint8_t buffer[OLED_W * OLED_H >> 3];
     uint8_t negative, inverted;
     Color color;
 }SH1106;
@@ -122,14 +123,41 @@ void oled_set_color(Color color, SH1106* oled){
 }
 
 void oled_draw_pixel(uint8_t x, uint8_t y, SH1106* oled){
+    x = (oled->inverted) ? 127 - x : x;
     if (x >= OLED_W || y >= OLED_H)
         return;
+    uint16_t pos = x + (y >> 3) * OLED_W; // the same as x + (y / 8) * OLED_W
 
     if (oled->color == WHITE){
-        oled->buffer[x + (y / 8) * OLED_W] |= 1 << (y % 8);
+        oled->buffer[pos] |= 1 << (y & 7); // y & 7 the same as y % 8
     } else {
-        oled->buffer[x + (y / 8) * OLED_W] &= ~(1 << (y % 8));
+        oled->buffer[pos] &= ~(1 << (y & 7));
     }
+}
+
+void oled_draw_bitmap(uint8_t x, uint8_t y, uint8_t width, uint8_t height, const uint8_t* bitmap, SH1106* oled){
+    uint8_t ch_mask = 0;
+    uint16_t size = (width * height) >> 3;
+
+    uint8_t original_x = x;
+    uint8_t original_y = y;
+   for (uint16_t i = 0; i < size; i++){
+       for (uint8_t j = 0; j < 8; j++){
+           ch_mask = 0x80 >> j;
+
+           if (bitmap[i] & ch_mask)
+               oled_draw_pixel(x, y, oled);
+           x++;
+
+           if ((x - original_x) == width){
+               y++;
+               x = original_x;
+           }
+           if((y - original_y) == height){
+               return;
+           }
+       }
+   }
 }
 
 void oled_print_ch(char ch, uint8_t x, uint8_t y, const uint8_t* font, SH1106* oled){
@@ -141,7 +169,6 @@ void oled_print_ch(char ch, uint8_t x, uint8_t y, const uint8_t* font, SH1106* o
                oled_draw_pixel(x + col, y + row, oled);
             }
         }
-        //oled->buffer[x + col + (y/8) * OLED_W] |= font[(ascii_pos * 5) + col];
     }
 }
 
@@ -153,26 +180,16 @@ void oled_print_str(const char* str, uint8_t x, uint8_t y, const uint8_t* font, 
     }
 }
 
-
-void oled_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, SH1106* oled){
-    /*int8_t dx = end_x - start_x;
-    int8_t dy = end_y - start_y;
-    if (dx != 0 && dy != 0){
-        float slope = (float)dy/(float)dx;
-        for (uint8_t x = start_x; x <= end_x; x++){
-            uint8_t y = slope * (x - start_x) + start_y;
-            oled_draw_pixel(x, y, oled);
+void oled_draw_rect(uint8_t x, uint8_t y, uint8_t width, uint8_t height, SH1106* oled){
+    for (uint8_t ry = y; ry < y + height; ry ++){
+        for (uint8_t rx = x; rx < x + width; rx++){
+            oled_draw_pixel(rx, ry, oled);
         }
     }
-    else if (dx == 0){
-        for (uint8_t y = start_y; y < end_y; y++)
-            oled_draw_pixel(start_x, y, oled);
-    }
-    else if (dy == 0) {
-        for (uint8_t x = start_x; x < end_x; x++)
-            oled_draw_pixel(x, start_y, oled);
-    }*/
+}
 
+
+void oled_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, SH1106* oled){
     //Modified Bresenham’s algorithm
     uint8_t start_x = (x2 < x1) ? x2 : x1;
     uint8_t start_y = (y2 > y1 || x2 > x1) ? y1 : y2;
