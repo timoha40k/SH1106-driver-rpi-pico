@@ -174,19 +174,80 @@ void oled_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, SH1106* oled
     }*/
 
     //Modified Bresenham’s algorithm
-    int8_t slop = 2 * (y2 - y1);
-    int8_t slop_error = slop - (x2 - x1);
+    uint8_t start_x = (x2 < x1) ? x2 : x1;
+    uint8_t start_y = (y2 > y1 || x2 > x1) ? y1 : y2;
+    uint8_t y_incr = (y2 > y1 || x1 > x2) ? 1 : -1;
 
-    for (uint8_t x = x1, y = y1; x <= x2; x++){
+    uint8_t dx = (x2 > x1) ? x2-x1 : x1-x2;
+    uint8_t dy = (y2 > y1) ? y2-y1 : y1-y2;
+
+    int8_t slop = 2 * (dy);
+    int8_t slop_error = slop - (dx);
+
+    for (uint8_t x = start_x, y = start_y; x < dx + start_x; x++){
         slop_error += slop;
 
         while (slop_error >=0){
             oled_draw_pixel(x, y, oled);
-            y++;
-            slop_error -= 2*(x2-x1);
+            y += y_incr;
+            slop_error -= 2*(dx);
         }
     }
 
+    /*if (y2 >= y1 && x2 > x1){
+        for (uint8_t x = start_x, y = y1; x < dx + start_x; x++){
+            slop_error += slop;
+
+            while (slop_error >=0){
+                oled_draw_pixel(x, y, oled);
+                y += 1;
+                slop_error -= 2*(dx);
+            }
+        }
+    } else if ( y2 > y1 && x1 > x2) {
+        for (uint8_t x = start_x, y = y1; x < dx + start_x; x++){
+            slop_error += slop;
+
+            while (slop_error >=0){
+                oled_draw_pixel(x, y, oled);
+                y += 1;
+                slop_error -= 2*(dx);
+            }
+        }
+    }
+    else if (x2 > x1) {
+        for (uint8_t x = start_x, y = y1; x < dx + start_x; x++){
+            slop_error += slop;
+
+            while (slop_error >=0){
+                oled_draw_pixel(x, y, oled);
+                y -= 1;
+                slop_error -= 2*(dx);
+            }
+        }
+    }else if (x1 > x2) {
+        for (uint8_t x = start_x, y = y2; x < dx + start_x; x++){
+            slop_error += slop;
+
+            while (slop_error >=0){
+                oled_draw_pixel(x, y, oled);
+                y += 1;
+                slop_error -= 2*(dx);
+            }
+        }
+    }*/
+
+}
+
+void oled_draw_hline(uint8_t x, uint8_t y, uint8_t width, SH1106* oled){
+    for(;x <= width; x++){
+        oled_draw_pixel(x, y, oled);
+    }
+}
+void oled_draw_vline(uint8_t x, uint8_t y, uint8_t height, SH1106* oled){
+    for(;y <= height; y++){
+        oled_draw_pixel(x, y, oled);
+    }
 }
 
 SH1106 oled_init(){
