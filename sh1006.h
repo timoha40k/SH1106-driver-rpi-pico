@@ -5,7 +5,6 @@
 #include <hardware/i2c.h>
 #include <pico/binary_info.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -180,15 +179,6 @@ void oled_print_str(const char* str, uint8_t x, uint8_t y, const uint8_t* font, 
     }
 }
 
-void oled_draw_rect(uint8_t x, uint8_t y, uint8_t width, uint8_t height, SH1106* oled){
-    for (uint8_t ry = y; ry < y + height; ry ++){
-        for (uint8_t rx = x; rx < x + width; rx++){
-            oled_draw_pixel(rx, ry, oled);
-        }
-    }
-}
-
-
 void oled_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, SH1106* oled){
     //Modified Bresenham’s algorithm
     uint8_t start_x = (x2 < x1) ? x2 : x1;
@@ -257,14 +247,35 @@ void oled_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, SH1106* oled
 }
 
 void oled_draw_hline(uint8_t x, uint8_t y, uint8_t width, SH1106* oled){
-    for(;x <= width; x++){
-        oled_draw_pixel(x, y, oled);
+    uint8_t end = x + width;
+    for(uint8_t cx = x; cx <= end; cx++){
+        oled_draw_pixel(cx, y, oled);
     }
 }
 void oled_draw_vline(uint8_t x, uint8_t y, uint8_t height, SH1106* oled){
-    for(;y <= height; y++){
-        oled_draw_pixel(x, y, oled);
+    uint8_t end = y + height;
+    for(uint8_t cy = y; cy <= end; cy++){
+        oled_draw_pixel(x, cy, oled);
     }
+}
+
+void oled_draw_rect_filled(uint8_t x, uint8_t y, uint8_t width, uint8_t height, SH1106* oled){
+    for (uint8_t ry = y; ry <= y + height; ry ++){
+        for (uint8_t rx = x; rx <= x + width; rx++){
+            oled_draw_pixel(rx, ry, oled);
+        }
+    }
+}
+
+void oled_draw_rect(uint8_t x, uint8_t y, uint8_t width, uint8_t height, SH1106* oled){
+    /*for (uint8_t rx = x; rx < x + width; rx++) oled_draw_pixel(rx, y, oled);
+    for (uint8_t rx = x; rx < x + width; rx++) oled_draw_pixel(rx, y + height, oled);
+    for (uint8_t ry = y; ry < y + height; ry ++) oled_draw_pixel(x, ry, oled);
+    for (uint8_t ry = y; ry < y + height; ry ++) oled_draw_pixel(x + width, ry, oled);*/
+    oled_draw_hline(x, y, width, oled);
+    oled_draw_hline(x, y + height, width, oled);
+    oled_draw_vline(x, y, height, oled);
+    oled_draw_vline(x + width, y, height, oled);
 }
 
 SH1106 oled_init(){
