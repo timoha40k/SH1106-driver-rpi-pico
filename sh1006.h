@@ -1,12 +1,18 @@
 #ifndef MYSH1106_H
 #define MYSH1106_H
 
+#include "fonts.h"
+#include <ctype.h>
 #include <pico/stdlib.h>
 #include <hardware/i2c.h>
 #include <pico/binary_info.h>
+#include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <math.h>
 
 #define SH1106_I2C_ADDR 0x3C
 #define OLED_W 128
@@ -69,6 +75,7 @@ typedef enum {BLACK, WHITE} Color;
 typedef struct{
     uint8_t buffer[OLED_W * OLED_H >> 3];
     uint8_t negative, inverted;
+    uint8_t font_spacing, font_height, font_width;
     Color color;
 }SH1106;
 
@@ -84,7 +91,7 @@ void oled_write_register_multi(uint8_t* data, uint16_t count){
     for (uint16_t i = 0; i < count; i++){
         src[1 + i] = data[i];
     }
-    i2c_write_blocking(I2C_MACRO, SH1106_I2C_ADDR, src, count + 1, false); // false not true
+    i2c_write_blocking(I2C_MACRO, SH1106_I2C_ADDR, src, count + 1, false);
 }
 
 void oled_update_screen(SH1106* oled){
@@ -136,7 +143,7 @@ void oled_draw_pixel(uint8_t x, uint8_t y, SH1106* oled){
 
 void oled_draw_bitmap(uint8_t x, uint8_t y, uint8_t width, uint8_t height, const uint8_t* bitmap, SH1106* oled){
     uint8_t ch_mask = 0;
-    uint16_t size = (width * height) >> 3;
+    uint16_t size = (width * height + 7) >> 3;
 
     uint8_t original_x = x;
     uint8_t original_y = y;
@@ -161,10 +168,10 @@ void oled_draw_bitmap(uint8_t x, uint8_t y, uint8_t width, uint8_t height, const
 
 void oled_print_ch(char ch, uint8_t x, uint8_t y, const uint8_t* font, SH1106* oled){
     uint8_t ascii_pos = ch - 32;
-    uint8_t font_width = 5;
-    for (uint8_t col = 0; col < 5; col++){
-        for (uint8_t row = 0; row < 7; row++){
-            if (font[ascii_pos*5 + col] & (1 << row)) {
+    uint8_t font_width = oled->font_width;
+    for (uint8_t col = 0; col < font_width; col++){
+        for (uint8_t row = 0; row < oled->font_height; row++){
+            if (font[ascii_pos*font_width + col] & (1 << row)) {
                oled_draw_pixel(x + col, y + row, oled);
             }
         }
@@ -172,11 +179,81 @@ void oled_print_ch(char ch, uint8_t x, uint8_t y, const uint8_t* font, SH1106* o
 }
 
 void oled_print_str(const char* str, uint8_t x, uint8_t y, const uint8_t* font, SH1106* oled){
-    uint8_t spacing = 6;
+    uint8_t spacing = oled->font_spacing;
     while (*str){
         oled_print_ch(*str++, x, y, font, oled);
         x += spacing;
     }
+}
+
+/*dig_sep - digits after decimal separation, coma. overal length of float can't exceed 15 digits, otherwise, chage the digit[] array size*/
+void oled_print_float(float val, uint8_t dig_sep, uint8_t x, uint8_t y, const uint8_t* font, SH1106* oled){
+    char digits[16];
+    int int_part = (int)val;
+    int float_part = roundf((val - int_part) * powf(10.0f, dig_sep));
+    char format[8];
+    snprintf(format, 8, "%%d.%%0%dd", dig_sep);
+    snprintf(digits, 16, format, int_part, float_part);
+    oled_print_str(digits, x, y, font, oled);
+}
+void oled_print_int(int val, uint8_t x, uint8_t y, const uint8_t* font, SH1106* oled){
+    char digits[16];
+    sniprintf(digits, 16, "%d", val);
+    oled_print_str(digits, x, y, font, oled);
+}
+
+void oled_print_str_formating(const char* str, uint8_t x, uint8_t y, const uint8_t* font, SH1106* oled, ...){
+    va_list arg;
+    va_start(arg, oled);
+    uint8_t spacing = oled->font_spacing;
+
+    const char* ptr = str;
+    while (*ptr){
+        while (*ptr && *ptr != '%'){
+            oled_print_ch(*ptr, x, y, font, oled);
+            x += spacing;
+            ptr++;
+        }
+        if (!*ptr) break;
+        ptr++;// skipping the % sign
+        char format[16];
+        //char number[16];
+        uint8_t k = 0;
+        while (isdigit(*ptr)){
+            format[k++] = *ptr++;
+        }
+        format[k] = '\0';
+        //ptr++;
+        char tmp[32];
+        if (*ptr == 'i' || *ptr == 'd'
+            || *ptr == 'u' || *ptr == 'h') {
+            snprintf(tmp, sizeof(tmp), "%d", va_arg(arg, int));
+            oled_print_str(tmp, x, y, font, oled);
+            x += strlen(tmp) * spacing;
+        }
+        else if (*ptr == 'f') {
+            int dig_sep = k > 0 ? atoi(format) : 2;
+            oled_print_float(va_arg(arg, double), dig_sep, x, y, font, oled);
+            snprintf(tmp, sizeof(tmp), "%.*f", dig_sep, 0.0);//measure legth of float
+            x += (strlen(tmp)+1) * spacing;
+        }
+        else if (*ptr == 'c') {
+            oled_print_ch(va_arg(arg, int), x, y, font, oled);
+        }
+        else if (*ptr == 's') {
+            char* s = va_arg(arg, char*);
+            oled_print_str(s, x, y, font, oled);
+            x += strlen(s) * spacing;
+        } else{
+            oled_print_str(format, x, y, font, oled);
+        }
+        ptr++;
+    }
+    /*while (*str){
+        oled_print_ch(*str++, x, y, font, oled);
+        x += spacing;
+    }*/
+    va_end(arg);
 }
 
 void oled_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, SH1106* oled){
@@ -278,6 +355,18 @@ void oled_draw_rect(uint8_t x, uint8_t y, uint8_t width, uint8_t height, SH1106*
     oled_draw_vline(x + width, y, height, oled);
 }
 
+void oled_set_font3x5(SH1106* oled){
+    oled->font_spacing = 4;
+    oled->font_height = 5;
+    oled->font_width = 3;
+}
+
+void oled_set_font5x7(SH1106* oled){
+    oled->font_spacing = 6;
+    oled->font_height = 7;
+    oled->font_width = 5;
+}
+
 SH1106 oled_init(){
     oled_write_register(DISPLAY_OFF);
 
@@ -334,6 +423,8 @@ SH1106 oled_init(){
 
     oled.color = WHITE;
     oled.negative = 0;
+    oled.inverted = 0;
+    oled_set_font5x7(&oled);
 
     oled_fill(BLACK, &oled);
     oled_update_screen(&oled);
