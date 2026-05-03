@@ -2,19 +2,13 @@
 #include "pico/cyw43_arch.h"
 #include "hardware/i2c.h"
 
-/*#include "pico-sh1106-oled/sh1106.h"
-#include "pico-sh1106-oled/sh1106.c"
-#include "pico-sh1106-oled/font.c"
-#include "pico-sh1106-oled/font.h"*/
-
-#include "sh1006.h"
-#include "fonts.h"
+#include "SH1106-driver-rpi-pico/sh1106.h"
+#include "SH1106-driver-rpi-pico/fonts.h"
 #include <pico/time.h>
 
 
 int main() {
     stdio_init_all();
-
     sleep_ms(100);
     i2c_init(i2c_default, 400000);
     gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
@@ -24,7 +18,7 @@ int main() {
 
     sleep_ms(100); // I generally reccomend putting delay, otherwise it might cause strange behaviour
 
-    SH1106 oled = oled_init();
+    SH1106* oled = oled_init();
 
     const uint8_t lain[] = {
           0x00, 0x01, 0x00, 0x00,
@@ -57,17 +51,16 @@ int main() {
           0x00, 0x00, 0x00, 0x00
     };
 
-    oled_draw_bitmap(80, 0, 32, 28, lain, &oled);
+    oled_draw_bitmap(80, 0, 32, 28, lain, oled);
 
-    oled_print_str("Rpi Pico 2W", 0, 0, font5x7, &oled);
-    oled_print_str("example:", 0, 10, font5x7, &oled);
+    oled_print_str_formating("Rpi Pico %dW", 0, 0, font5x7, oled, 2);
+    oled_print_str("example:", 0, 10, font5x7, oled);
 
-    oled_draw_rect(0, 20, 10, 10, &oled);
+    oled_draw_rect(0, 20, 10, 10, oled);
 
-    oled_draw_line(80, 50, 60, 40, &oled);
-    oled_update_screen(&oled);
+    oled_draw_line(80, 50, 60, 40, oled);
+    oled_update_screen(oled);
     while (true) {
-
         sleep_ms(1000);
     }
 }
