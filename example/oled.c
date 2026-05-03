@@ -16,7 +16,7 @@ int main() {
 
     sleep_ms(100); // I generally reccomend putting delay, otherwise it might cause strange behaviour
 
-    SH1106* oled = oled_init();
+    oled_init();
 
     const uint8_t lain[] = {
           0x00, 0x01, 0x00, 0x00,
@@ -49,15 +49,15 @@ int main() {
           0x00, 0x00, 0x00, 0x00
     };
 
-    oled_draw_bitmap(80, 0, 32, 28, lain, oled);
+    oled_draw_bitmap(80, 0, 32, 28, lain);
 
-    oled_print_str_formating("Rpi Pico %dW", 0, 0, font5x7, oled, 2);
-    oled_print_str("example:", 0, 10, font5x7, oled);
+    oled_print_str_formating("Rpi Pico %dW", 0, 0, font5x7, 2);
+    oled_print_str("example:", 0, 10, font5x7);
 
-    oled_draw_rect(0, 20, 10, 10, oled);
+    oled_draw_rect(0, 20, 10, 10);
 
-    oled_draw_line(80, 50, 60, 40, oled);
-    oled_update_screen(oled);
+    oled_draw_line(80, 50, 60, 40);
+    oled_update_screen();
     while (true) {
         sleep_ms(1000);
     }
