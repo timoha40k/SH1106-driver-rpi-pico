@@ -6,7 +6,6 @@ In example folder you can find how to use the driver
 * Line drawing between any two points (Bresenham's algorithm)
 * Formatted text printing (printf-style)
 * Bitmap rendering
-
 ## Setup
 In `CMakeLists.txt` add `hardware_i2c` to your `target_link_libraries`:
 ```
@@ -31,10 +30,12 @@ All drawing is written to an internal framebuffer, so after you finish drawing, 
 ```c
 oled_update_screen()
 ```
+\
+![Preview](example/oled_example.jpg)
 ## API Reference
 ### Core
 ```c
-// Initializes the display, perfomes primary screen clearing and setting up the screen to work properly.
+// Initialize the display, perfome primary screen clearing and setting up the screen to work properly.
 void oled_init()
 // Write framebuffer data to the display.
 void oled_update_screen()
