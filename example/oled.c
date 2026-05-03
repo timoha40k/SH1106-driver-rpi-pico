@@ -1,5 +1,3 @@
-#include "pico/stdlib.h"
-#include "pico/cyw43_arch.h"
 #include "hardware/i2c.h"
 
 #include "SH1106-driver-rpi-pico/sh1106.h"
